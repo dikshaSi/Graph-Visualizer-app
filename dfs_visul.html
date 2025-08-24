@@ -1,0 +1,849 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Algorithm Visualizer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-right: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            flex: 1;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 0;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .algorithm-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+        
+        .algorithm-btn {
+            background-color: #2196F3;
+        }
+        
+        .algorithm-btn:hover {
+            background-color: #0b7dda;
+        }
+        
+        #graphContainer {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            border: 1px solid #ddd;
+            background-color: white;
+            flex-grow: 1;
+            margin-bottom: 20px;
+        }
+        
+        .output {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            font-family: monospace;
+            min-height: 50px;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+        
+        .node {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.3s;
+        }
+        
+        .visited {
+            background-color: #FF5722;
+        }
+        
+        .processing {
+            background-color: #9C27B0;
+        }
+        
+        .path {
+            background-color: #FFC107;
+        }
+        
+        .source-node {
+            background-color: #00BCD4 !important;
+        }
+        
+        .source-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e3f2fd;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .warning {
+            color: #ff5722;
+            font-weight: bold;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #ffebee;
+            border-radius: 4px;
+        }
+        
+        .algorithm-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        
+        .edge-weight {
+            position: absolute;
+            background-color: white;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 12px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Graph Info</h2>
+        <div id="graphType" class="source-info">
+            Graph Type: <span id="graphTypeDisplay">Not generated</span>
+        </div>
+        <div id="sourceInfo" class="source-info">
+            Source Node: <span id="sourceNodeDisplay">Not set</span>
+        </div>
+        
+        <h2>Algorithm</h2>
+        <div id="algorithmInfo" class="algorithm-info">
+            No algorithm running
+        </div>
+        
+        <div id="warningInfo" class="warning"></div>
+    </div>
+    
+    <div class="container">
+        <h1>Graph Algorithm Visualizer</h1>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #4CAF50;"></div>
+                <span>Normal Node</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #00BCD4;"></div>
+                <span>Source Node</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #765d55;"></div>
+                <span>Visited Node</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #9C27B0;"></div>
+                <span>Processing Node</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #FFC107;"></div>
+                <span>Path Node</span>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="generateGraph">Generate Graph</button>
+            <div class="algorithm-buttons">
+                <button class="algorithm-btn" id="startDFS" disabled>Start DFS</button>
+                <button class="algorithm-btn" id="startBFS" disabled>Start BFS</button>
+                <button class="algorithm-btn" id="startDijkstra" disabled>Start Dijkstra</button>
+                <button class="algorithm-btn" id="startBellman" disabled>Start Bellman-Ford</button>
+                <button class="algorithm-btn" id="startKahn" disabled>Start Kahn's (TopoSort)</button>
+            </div>
+        </div>
+        
+        <div id="graphContainer"></div>
+        
+        <div class="output">
+            <h3>Visited Nodes:</h3>
+            <div id="visitedNodes"></div>
+        </div>
+    </div>
+
+    <script>
+        // Graph data structure
+        class Graph {
+            constructor() {
+                this.nodes = [];
+                this.edges = {};
+                this.isDirected = false;
+                this.isWeighted = false;
+            }
+            
+            addNode(node) {
+                this.nodes.push(node);
+                this.edges[node] = [];
+            }
+            
+            addEdge(node1, node2, weight = 1) {
+                this.edges[node1].push({ node: node2, weight });
+                if (!this.isDirected) {
+                    this.edges[node2].push({ node: node1, weight });
+                }
+            }
+            
+            getNeighbors(node) {
+                return this.edges[node] || [];
+            }
+        }
+
+        // DOM elements
+        const graphContainer = document.getElementById('graphContainer');
+        const generateGraphBtn = document.getElementById('generateGraph');
+        const startDFSBtn = document.getElementById('startDFS');
+        const startBFSBtn = document.getElementById('startBFS');
+        const startDijkstraBtn = document.getElementById('startDijkstra');
+        const startBellmanBtn = document.getElementById('startBellman');
+        const startKahnBtn = document.getElementById('startKahn');
+        const visitedNodesDiv = document.getElementById('visitedNodes');
+        const graphTypeDisplay = document.getElementById('graphTypeDisplay');
+        const sourceNodeDisplay = document.getElementById('sourceNodeDisplay');
+        const algorithmInfoDiv = document.getElementById('algorithmInfo');
+        const warningInfoDiv = document.getElementById('warningInfo');
+
+        // Global variables
+        let graph = new Graph();
+        let nodeElements = {};
+        let edgeElements = [];
+        let animationSpeed = 1000; // ms between steps
+        let isAlgorithmRunning = false;
+        let algorithmTimeout = null;
+        let currentSourceNode = null;
+
+        // Initialize
+        generateGraphBtn.addEventListener('click', generateRandomGraph);
+        startDFSBtn.addEventListener('click', () => runAlgorithm('dfs'));
+        startBFSBtn.addEventListener('click', () => runAlgorithm('bfs'));
+        startDijkstraBtn.addEventListener('click', () => runAlgorithm('dijkstra'));
+        startBellmanBtn.addEventListener('click', () => runAlgorithm('bellman'));
+        startKahnBtn.addEventListener('click', () => runAlgorithm('kahn'));
+
+        // Generate a random graph
+        function generateRandomGraph() {
+            // Cancel any running algorithm
+            if (isAlgorithmRunning) {
+                clearTimeout(algorithmTimeout);
+                isAlgorithmRunning = false;
+                updateAlgorithmInfo("Algorithm stopped. Generating new graph...");
+            }
+            
+            // Clear previous graph
+            graphContainer.innerHTML = '';
+            graph = new Graph();
+            nodeElements = {};
+            edgeElements = [];
+            visitedNodesDiv.innerHTML = '';
+            warningInfoDiv.innerHTML = '';
+            
+            // Randomly decide if graph is directed and/or weighted
+            graph.isDirected = Math.random() > 0.5;
+            graph.isWeighted = Math.random() > 0.5;
+            
+            // Update graph type display
+            let graphType = graph.isDirected ? "Directed " : "Undirected ";
+            graphType += graph.isWeighted ? " Weighted" : " Unweighted";
+            graphTypeDisplay.textContent = graphType;
+            
+            // Create nodes (5-8 nodes for better visibility)
+            const nodeCount = Math.floor(Math.random() * 3) + 5;
+            const nodePositions = [];
+            
+            for (let i = 0; i < nodeCount; i++) {
+                const nodeId = i;
+                graph.addNode(nodeId);
+                
+                // Position nodes in a circular layout for better visibility
+                const angle = (i * 2 * Math.PI) / nodeCount;
+                const radius = Math.min(graphContainer.offsetWidth, graphContainer.offsetHeight) * 0.35;
+                const centerX = graphContainer.offsetWidth / 2;
+                const centerY = graphContainer.offsetHeight / 2;
+                
+                const x = centerX + radius * Math.cos(angle) - 15;
+                const y = centerY + radius * Math.sin(angle) - 15;
+                
+                nodePositions.push({ x, y });
+                
+                // Create node element
+                const nodeElement = document.createElement('div');
+                nodeElement.className = 'node';
+                nodeElement.id = `node-${nodeId}`;
+                nodeElement.textContent = nodeId;
+                nodeElement.style.left = `${x}px`;
+                nodeElement.style.top = `${y}px`;
+                graphContainer.appendChild(nodeElement);
+                nodeElements[nodeId] = nodeElement;
+            }
+            
+            // Create edges (each node connects to 1-3 other nodes)
+            for (let i = 0; i < nodeCount; i++) {
+                const edgeCount = Math.min(Math.floor(Math.random() * 3) + 1, nodeCount - 1);
+                const connectedNodes = new Set();
+                
+                // Connect to random nodes
+                while (connectedNodes.size < edgeCount) {
+                    const target = Math.floor(Math.random() * nodeCount);
+                    if (target !== i && !connectedNodes.has(target)) {
+                        connectedNodes.add(target);
+                        
+                        // Random weight between 1-10 for weighted graphs
+                        const weight = graph.isWeighted ? Math.floor(Math.random() * 10) + 1 : 1;
+                        graph.addEdge(i, target, weight);
+                        
+                        // Draw edge
+                        drawEdge(i, target, weight);
+                    }
+                }
+            }
+            
+            // Set random source node
+            currentSourceNode = Math.floor(Math.random() * nodeCount);
+            sourceNodeDisplay.textContent = currentSourceNode;
+            nodeElements[currentSourceNode].classList.add('source-node');
+            
+            // Enable algorithm buttons
+            startDFSBtn.disabled = false;
+            startBFSBtn.disabled = false;
+            startDijkstraBtn.disabled = false;
+            startBellmanBtn.disabled = false;
+            startKahnBtn.disabled = false;
+            
+            updateAlgorithmInfo("New graph generated. Select an algorithm to visualize.");
+        }
+
+        // Draw an edge between two nodes
+        function drawEdge(from, to, weight) {
+            const fromElement = nodeElements[from];
+            const toElement = nodeElements[to];
+            
+            if (!fromElement || !toElement) return;
+            
+            const fromRect = fromElement.getBoundingClientRect();
+            const toRect = toElement.getBoundingClientRect();
+            
+            const containerRect = graphContainer.getBoundingClientRect();
+            
+            const fromX = fromRect.left - containerRect.left + fromRect.width / 2;
+            const fromY = fromRect.top - containerRect.top + fromRect.height / 2;
+            const toX = toRect.left - containerRect.left + toRect.width / 2;
+            const toY = toRect.top - containerRect.top + toRect.height / 2;
+            
+            // Create line element
+            const line = document.createElement('div');
+            line.style.position = 'absolute';
+            line.style.height = '2px';
+            line.style.backgroundColor = '#333';
+            line.style.transformOrigin = '0 0';
+            
+            // Calculate length and angle of the line
+            const length = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
+            const angle = Math.atan2(toY - fromY, toX - fromX) * 180 / Math.PI;
+            
+            line.style.width = `${length}px`;
+            line.style.left = `${fromX}px`;
+            line.style.top = `${fromY}px`;
+            line.style.transform = `rotate(${angle}deg)`;
+            
+            // Add arrowhead for directed graphs
+            if (graph.isDirected) {
+                line.style.background = 'linear-gradient(to right, #333 95%, transparent 95%)';
+                
+                // Add arrowhead at the end
+                const arrowSize = 8;
+                const arrow = document.createElement('div');
+                arrow.style.position = 'absolute';
+                arrow.style.width = '0';
+                arrow.style.height = '0';
+                arrow.style.borderLeft = `${arrowSize}px solid transparent`;
+                arrow.style.borderRight = `${arrowSize}px solid transparent`;
+                arrow.style.borderBottom = `${arrowSize}px solid #333`;
+                arrow.style.transform = `rotate(${angle + 90}deg)`;
+                arrow.style.left = `${toX - arrowSize}px`;
+                arrow.style.top = `${toY - arrowSize}px`;
+                graphContainer.appendChild(arrow);
+                edgeElements.push(arrow);
+            }
+            
+            // Add weight label for weighted graphs
+            if (graph.isWeighted) {
+                const label = document.createElement('div');
+                label.className = 'edge-weight';
+                label.textContent = weight;
+                label.style.left = `${(fromX + toX) / 2}px`;
+                label.style.top = `${(fromY + toY) / 2}px`;
+                graphContainer.appendChild(label);
+                edgeElements.push(label);
+            }
+            
+            graphContainer.appendChild(line);
+            edgeElements.push(line);
+        }
+
+        // Run selected algorithm
+        async function runAlgorithm(algorithm) {
+            if (isAlgorithmRunning) return;
+            isAlgorithmRunning = true;
+            
+            // Reset all nodes to normal state except source
+            for (const nodeId in nodeElements) {
+                nodeElements[nodeId].className = nodeId == currentSourceNode ? 'node source-node' : 'node';
+            }
+            
+            visitedNodesDiv.innerHTML = '';
+            warningInfoDiv.innerHTML = '';
+            
+            // Show warning for topological sort on undirected graph
+            if (algorithm === 'kahn' && !graph.isDirected) {
+                warningInfoDiv.innerHTML = "⚠️ Topological sort only works on directed acyclic graphs (DAGs)";
+                isAlgorithmRunning = false;
+                return;
+            }
+            
+            // Run selected algorithm
+            switch (algorithm) {
+                case 'dfs':
+                    updateAlgorithmInfo("DFS: Depth-First Search (uses stack)");
+                    await dfs(currentSourceNode);
+                    break;
+                case 'bfs':
+                    updateAlgorithmInfo("BFS: Breadth-First Search (uses queue)");
+                    await bfs(currentSourceNode);
+                    break;
+                case 'dijkstra':
+                    updateAlgorithmInfo("Dijkstra: Shortest path (no negative weights)");
+                    await dijkstra(currentSourceNode);
+                    break;
+                case 'bellman':
+                    updateAlgorithmInfo("Bellman-Ford: Shortest path (handles negative weights)");
+                    await bellmanFord(currentSourceNode);
+                    break;
+                case 'kahn':
+                    updateAlgorithmInfo("Kahn's: Topological sorting (for DAGs)");
+                    await kahnTopologicalSort();
+                    break;
+            }
+            
+            isAlgorithmRunning = false;
+        }
+
+        // DFS Algorithm
+        async function dfs(startNode) {
+            const visited = new Set();
+            const stack = [startNode];
+            visited.add(startNode);
+            let step = 1;
+            
+            while (stack.length > 0 && isAlgorithmRunning) {
+                const currentNode = stack.pop();
+                highlightNode(currentNode, 'processing');
+                updateVisitedNodes([...visited]);
+                updateAlgorithmInfo(`Step ${step++}: Processing node ${currentNode} (stack: [${stack.join(', ')}])`);
+                
+                await sleep(animationSpeed);
+                
+                if (!isAlgorithmRunning) break;
+                
+                highlightNode(currentNode, 'visited');
+                
+                const neighbors = graph.getNeighbors(currentNode);
+                for (const neighbor of neighbors) {
+                    if (!visited.has(neighbor.node)) {
+                        visited.add(neighbor.node);
+                        stack.push(neighbor.node);
+                        updateAlgorithmInfo(`Step ${step++}: Discovered node ${neighbor.node}, added to stack`);
+                        await sleep(animationSpeed/2);
+                        if (!isAlgorithmRunning) break;
+                    }
+                }
+            }
+            
+            if (isAlgorithmRunning) {
+                updateAlgorithmInfo(`DFS complete! Visited ${visited.size} nodes in ${step-1} steps.`);
+            }
+        }
+
+        // BFS Algorithm
+        async function bfs(startNode) {
+            const visited = new Set();
+            const queue = [startNode];
+            visited.add(startNode);
+            let step = 1;
+            
+            while (queue.length > 0 && isAlgorithmRunning) {
+                const currentNode = queue.shift();
+                highlightNode(currentNode, 'processing');
+                updateVisitedNodes([...visited]);
+                updateAlgorithmInfo(`Step ${step++}: Processing node ${currentNode} (queue: [${queue.join(', ')}])`);
+                
+                await sleep(animationSpeed);
+                
+                if (!isAlgorithmRunning) break;
+                
+                highlightNode(currentNode, 'visited');
+                
+                const neighbors = graph.getNeighbors(currentNode);
+                for (const neighbor of neighbors) {
+                    if (!visited.has(neighbor.node)) {
+                        visited.add(neighbor.node);
+                        queue.push(neighbor.node);
+                        updateAlgorithmInfo(`Step ${step++}: Discovered node ${neighbor.node}, added to queue`);
+                        await sleep(animationSpeed);
+                        if (!isAlgorithmRunning) break;
+                    }
+                }
+            }
+            
+            if (isAlgorithmRunning) {
+                updateAlgorithmInfo(`BFS complete! Visited ${visited.size} nodes in ${step-1} steps.`);
+            }
+        }
+        async function dijkstra(startNode) {
+            const distances = {};
+            const previous = {};
+            const visited = new Set();
+            const unvisited = new Set(graph.nodes);
+            let step = 1;
+            
+            // Initialize distances
+            for (const node of graph.nodes) {
+                distances[node] = node === startNode ? 0 : Infinity;
+            }
+            
+            while (unvisited.size > 0 && isAlgorithmRunning) {
+                // Find node with smallest distance
+                let currentNode = null;
+                let smallestDistance = Infinity;
+                
+                for (const node of unvisited) {
+                    if (distances[node] < smallestDistance) {
+                        smallestDistance = distances[node];
+                        currentNode = node;
+                    }
+                }
+                
+                if (currentNode === null) break;
+                
+                highlightNode(currentNode, 'processing');
+                updateVisitedNodes([...visited]);
+                updateAlgorithmInfo(`Step ${step++}: Processing node ${currentNode} (current distance: ${distances[currentNode]})`);
+                
+                await sleep(animationSpeed);
+                
+                if (!isAlgorithmRunning) break;
+                
+                unvisited.delete(currentNode);
+                visited.add(currentNode);
+                highlightNode(currentNode, 'visited');
+                
+                // Update distances to neighbors
+                const neighbors = graph.getNeighbors(currentNode);
+                for (const neighbor of neighbors) {
+                    if (!unvisited.has(neighbor.node)) continue;
+                    
+                    const distance = distances[currentNode] + neighbor.weight;
+                    if (distance < distances[neighbor.node]) {
+                        distances[neighbor.node] = distance;
+                        previous[neighbor.node] = currentNode;
+                        updateAlgorithmInfo(`Step ${step++}: Updated distance to node ${neighbor.node} (new distance: ${distance})`);
+                        await sleep(animationSpeed/2);
+                        if (!isAlgorithmRunning) break;
+                    }
+                }
+            }
+            
+            if (isAlgorithmRunning) {
+                // Show final distances
+                let output = 'Shortest distances from node ' + startNode + ':<br>';
+                for (const node in distances) {
+                    output += `Node ${node}: ${distances[node]}<br>`;
+                }
+                visitedNodesDiv.innerHTML = output;
+                updateAlgorithmInfo(`Dijkstra's algorithm complete in ${step-1} steps!`);
+            }
+        }
+
+        // Bellman-Ford Algorithm
+        async function bellmanFord(startNode) {
+            const distances = {};
+            const previous = {};
+            let step = 1;
+            
+            // Initialize distances
+            for (const node of graph.nodes) {
+                distances[node] = node === startNode ? 0 : Infinity;
+            }
+            
+            // Relax edges repeatedly
+            for (let i = 0; i < graph.nodes.length - 1 && isAlgorithmRunning; i++) {
+                let updated = false;
+                
+                for (const node of graph.nodes) {
+                    const neighbors = graph.getNeighbors(node);
+                    for (const neighbor of neighbors) {
+                        highlightNode(node, 'processing');
+                        highlightNode(neighbor.node, 'processing');
+                        updateVisitedNodes([node, neighbor.node]);
+                        updateAlgorithmInfo(`Step ${step++}: Relaxing edge ${node}→${neighbor.node}`);
+                        
+                        await sleep(animationSpeed / 2);
+                        
+                        if (!isAlgorithmRunning) break;
+                        
+                        const distance = distances[node] + neighbor.weight;
+                        if (distance < distances[neighbor.node]) {
+                            distances[neighbor.node] = distance;
+                            previous[neighbor.node] = node;
+                            updated = true;
+                            
+                            highlightNode(neighbor.node, 'path');
+                            updateAlgorithmInfo(`Step ${step++}: Updated distance to node ${neighbor.node} (new distance: ${distance})`);
+                            await sleep(animationSpeed / 2);
+                            if (!isAlgorithmRunning) break;
+                        }
+                        
+                        highlightNode(node, 'visited');
+                        highlightNode(neighbor.node, 'visited');
+                    }
+                    if (!isAlgorithmRunning) break;
+                }
+                
+                if (!updated) break;
+            }
+            
+            if (!isAlgorithmRunning) return;
+            
+            // Check for negative-weight cycles
+            for (const node of graph.nodes) {
+                const neighbors = graph.getNeighbors(node);
+                for (const neighbor of neighbors) {
+                    if (distances[node] + neighbor.weight < distances[neighbor.node]) {
+                        warningInfoDiv.innerHTML = 'Graph contains negative weight cycle!';
+                        updateAlgorithmInfo(`Bellman-Ford detected negative cycle after ${step} steps`);
+                        isAlgorithmRunning = false;
+                        return;
+                    }
+                }
+            }
+            
+            // Show final distances
+            let output = 'Shortest distances from node ' + startNode + ':<br>';
+            for (const node in distances) {
+                output += `Node ${node}: ${distances[node]}<br>`;
+            }
+            visitedNodesDiv.innerHTML = output;
+            updateAlgorithmInfo(`Bellman-Ford algorithm complete in ${step} steps!`);
+        }
+
+        // Kahn's Algorithm (Topological Sort)
+        async function kahnTopologicalSort() {
+            if (!graph.isDirected) {
+                warningInfoDiv.innerHTML = 'Topological sort only works on directed graphs!';
+                isAlgorithmRunning = false;
+                return;
+            }
+            
+            // Calculate in-degree for each node
+            const inDegree = {};
+            for (const node of graph.nodes) {
+                inDegree[node] = 0;
+            }
+            
+            for (const node of graph.nodes) {
+                for (const neighbor of graph.getNeighbors(node)) {
+                    inDegree[neighbor.node]++;
+                }
+            }
+            
+            // Queue for nodes with no incoming edges
+            const queue = [];
+            for (const node of graph.nodes) {
+                if (inDegree[node] === 0) {
+                    queue.push(node);
+                }
+            }
+            
+            updateAlgorithmInfo(`Initial queue (nodes with 0 in-degree): [${queue.join(', ')}]`);
+            await sleep(animationSpeed);
+            if (!isAlgorithmRunning) return;
+            
+            let count = 0;
+            const topOrder = [];
+            let step = 1;
+            
+            while (queue.length > 0 && isAlgorithmRunning) {
+                const currentNode = queue.shift();
+                topOrder.push(currentNode);
+                
+                highlightNode(currentNode, 'processing');
+                updateVisitedNodes([...topOrder]);
+                updateAlgorithmInfo(`Step ${step++}: Processing node ${currentNode} (current order: [${topOrder.join(', ')}])`);
+                
+                await sleep(animationSpeed);
+                if (!isAlgorithmRunning) break;
+                
+                highlightNode(currentNode, 'visited');
+                
+                // Reduce in-degree for all neighbors
+                for (const neighbor of graph.getNeighbors(currentNode)) {
+                    inDegree[neighbor.node]--;
+                    updateAlgorithmInfo(`Step ${step++}: Reduced in-degree for node ${neighbor.node} (now ${inDegree[neighbor.node]})`);
+                    await sleep(animationSpeed/2);
+                    if (!isAlgorithmRunning) break;
+                    
+                    if (inDegree[neighbor.node] === 0) {
+                        queue.push(neighbor.node);
+                        updateAlgorithmInfo(`Step ${step++}: Node ${neighbor.node} now has 0 in-degree, added to queue`);
+                        await sleep(animationSpeed/2);
+                        if (!isAlgorithmRunning) break;
+                    }
+                }
+                
+                count++;
+            }
+            
+            if (!isAlgorithmRunning) return;
+            
+            // Check for cycle
+            if (count !== graph.nodes.length) {
+                warningInfoDiv.innerHTML = 'Graph contains a cycle! Topological sort not possible.';
+                updateAlgorithmInfo(`Kahn's algorithm detected cycle after ${step} steps`);
+            } else {
+                visitedNodesDiv.innerHTML = 'Topological order: ' + topOrder.join(' → ');
+                updateAlgorithmInfo(`Kahn's algorithm complete in ${step} steps!`);
+            }
+        }
+
+        // Helper function to highlight a node
+        function highlightNode(nodeId, state) {
+            const nodeElement = nodeElements[nodeId];
+            if (!nodeElement) return;
+            
+            // Always keep source node highlighted differently
+            nodeElement.className = nodeId == currentSourceNode ? 'node source-node' : 'node';
+            
+            if (state === 'visited') {
+                nodeElement.classList.add('visited');
+            } else if (state === 'processing') {
+                nodeElement.classList.add('processing');
+            } else if (state === 'path') {
+                nodeElement.classList.add('path');
+            }
+        }
+
+        // Helper function to update visited nodes display
+        function updateVisitedNodes(nodes) {
+            visitedNodesDiv.innerHTML = 'Visited nodes: ' + nodes.join(', ');
+        }
+
+        // Helper function to update algorithm info
+        function updateAlgorithmInfo(info) {
+            algorithmInfoDiv.innerHTML = info;
+        }
+
+        // Helper function for animation delays
+        function sleep(ms) {
+            return new Promise(resolve => {
+                algorithmTimeout = setTimeout(resolve, ms);
+            });
+        }
+
+        // Generate initial graph
+        generateRandomGraph();
+    </script>
+</body>
+</html>
